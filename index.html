@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML to JSX Converter</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="bg-blue-500 p-4 text-white">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">HTML to JSX Converter</h1>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto flex-1 p-6 mt-6">
+        <div class="max-w-2xl mx-auto bg-white rounded p-6 shadow-lg">
+            <textarea id="htmlInput" class="w-full h-32 border border-gray-300 rounded p-2 mb-4"
+                placeholder="Enter HTML code here..."></textarea>
+            <button onclick="convertToJSX()"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring focus:border-blue-300">
+                Convert
+            </button>
+            <div class="mt-4">
+                <pre id="jsxOutput" class="whitespace-pre-wrap font-mono"></pre>
+                <button id="copyButton"
+                    class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring focus:border-blue-300">
+                    Copy JSX
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-200 py-4">
+        <div class="container mx-auto text-center">
+            <p class="text-gray-600">&copy; 2023 HTML to JSX Converter. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        function htmlToJSX(html) {
+            const tempElement = document.createElement('div');
+            tempElement.innerHTML = html;
+
+            function convertAttributeName(attributeName) {
+                // Convert hyphenated attribute names to camelCase
+                return attributeName.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
+            }
+
+            function parseNode(node) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    return node.textContent;
+                }
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const attributes = Array.from(node.attributes);
+                    const jsxAttributes = attributes.map(attr => {
+                        // Convert 'class' attribute to 'className'
+                        if (attr.name.toLowerCase() === 'class') {
+                            return `className="${attr.value}"`;
+                        }
+                        // Handle style attribute and other hyphenated attributes
+                        const attributeName = convertAttributeName(attr.name);
+                        if (attributeName === 'style') {
+                            return `${attributeName}={{${attr.value}}}`;
+                        }
+                        return `${attributeName}="${attr.value}"`;
+                    }).join(' ');
+
+                    const jsxChildren = Array.from(node.childNodes).map(parseNode).join('');
+                    // Check if the element is self-closing
+                    if (jsxChildren.length === 0) {
+                        return `<${node.tagName.toLowerCase()} ${jsxAttributes} />`;
+                    }
+                    return `<${node.tagName.toLowerCase()} ${jsxAttributes}>${jsxChildren}</${node.tagName.toLowerCase()}>`;
+                }
+                // Handle comments
+                if (node.nodeType === Node.COMMENT_NODE) {
+                    return `{/*${node.nodeValue}*/}`;
+                }
+                return '';
+            }
+
+            const jsxString = Array.from(tempElement.childNodes).map(parseNode).join('');
+
+            return jsxString;
+        }
+
+
+        function convertToJSX() {
+            const htmlInput = document.getElementById('htmlInput').value;
+            const jsxOutput = htmlToJSX(htmlInput);
+            document.getElementById('jsxOutput').textContent = jsxOutput;
+        }
+
+        document.getElementById('copyButton').addEventListener('click', function () {
+            const jsxOutput = document.getElementById('jsxOutput');
+            const textArea = document.createElement('textarea');
+            textArea.value = jsxOutput.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('JSX code copied to clipboard!');
+        });
+    </script>
+</body>
+
+</html>
